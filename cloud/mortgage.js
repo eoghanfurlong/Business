@@ -40,7 +40,11 @@ var mortgage = {
 		 
 		 //Feedhenry Web Call
 		var res= $fh.web(opt);
+		
+		// getSOAPElement will return an xml object that exists in SOAP response
 		var xmlData=getSOAPElement("GetMortgagePaymentResult",res.body);
+		
+		// construct final returned JSON object.
 		var rtnObj={
 			MonthlyPrincipalAndInterest:xmlData.MonthlyPrincipalAndInterest.toString(),
 			MonthlyTax:xmlData.MonthlyTax.toString(),
