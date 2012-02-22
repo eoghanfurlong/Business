@@ -3,12 +3,16 @@
  * Use this Web service to figure out your monthly mortgage payment.
  */
 var mortgage = {
+	//SOAP API URL
 	SOAPUrl : "http://www.webservicex.net/mortgage.asmx",
 	/**
 	 * Calc mortgaeg based on user input.
 	 * Tutorial: How to wrap SOAP message and unwrap SOAP response.
 	 */
 	getMortgage : function(years, interest,loanAmount,tax,insurance) {
+		/**
+		 * Since SOAP calls are wrapped HTTP calls, in Javascript we have to wrap SOAP envelope manually or using a SOAP library in Javascript
+		 */
 		var xmlContent = '<?xml version="1.0" encoding="utf-8"?>' + 
 		'<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' + 
 		' <soap:Body>' + 
@@ -22,7 +26,9 @@ var mortgage = {
 		' </soap:Body>' + 
 		'</soap:Envelope>'
 		
+		
 		var url=this.SOAPUrl;
+		//Webcall paramters.
 		var opt={
 			url : url,
 			method : "POST",
@@ -31,6 +37,8 @@ var mortgage = {
 			body:xmlContent,
 			period : 3600
 		 };
+		 
+		 //Feedhenry Web Call
 		var res= $fh.web(opt);
 		var xmlData=getSOAPElement("GetMortgagePaymentResult",res.body);
 		var rtnObj={
@@ -45,4 +53,4 @@ var mortgage = {
 		
 		
 	}
-}
+};
