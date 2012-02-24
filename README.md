@@ -82,4 +82,4 @@ Open mortgage.js in cloud folder with you favorite text editor and put following
 
 Please read the comments carefully to understand each step.
 
-Write client-side code and link those files. Check out v2 branch to explore to final version.
+Write client-side code and link those files. Check out v2 branch to explore the code.
