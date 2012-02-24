@@ -102,3 +102,8 @@ Open stock.js in cloud folder and put the following code inside:
                         return resObj.ResultSet.Result[0].symbol; //return the first matched stock symbol
                   }
             }
+
+Please read the comments carefully to understand each step.
+
+Write client-side code and link those files. Check out v4 branch to explore the code.
+
