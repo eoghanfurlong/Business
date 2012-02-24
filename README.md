@@ -149,3 +149,8 @@ Open zendesk.js in cloud folder and put the following code inside:
                    }
               }
             };
+
+Please read the comments carefully to understand each step.
+
+Write client-side code and link those files. Check out v3 branch to explore the code.
+
