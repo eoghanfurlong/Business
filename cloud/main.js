@@ -22,7 +22,3 @@ function listUserRequests(param){
 function getMortgage(param){
 	return mortgage.getMortgage(param.years,param.interest,param.loanAmount,param.tax,param.insurance);
 }
-<<<<<<< HEAD
-=======
-
->>>>>>> 9d8c89f2094f028fe8c3a456f07ae2616898bf87
