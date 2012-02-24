@@ -1,107 +1,104 @@
-# Business APIs Integration with Feedhenry Apps
+## MASH UP - JSONP and SOAP (v4 Branch)
 
-## Introduction
-
-Thousands of services on web are provided based on HTTP proxy such as SOAP, REST etc.
-
-This tutorial will lead an app development process which contains following content:
-
-* How to invoke external SOAP services, parse returned data and send data to device with Feedhenry Platform.
-* How to invoke external REST services, parse data and sent data to device with Feedhenry Platform.
-* How to Mash-up data from different services and send data to device.
-* How to use Javascript library on cloud.
-
-## Workbase Structure (v1 Branch)
-<img src="https://github.com/keyang-feedhenry/Business/raw/master/docs/projectstructure.png"/>
-
-
-## SOAP Service Integration (v2 Branch)
-
-### Step 1 -- Prepare 
+### Step 1 -- Prepare
 #### Web service choosing
+Yahoo Finance: Look up company stock symbol using company name.
 
-Mortgage Calculator: Use this Web service to figure out your monthly mortgage payment
+Yahoo API: http://d.yimg.com/autoc.finance.yahoo.com/autoc?query={0}&callback=YAHOO.Finance.SymbolSuggest.ssCallback
 
-SOAP WSDL: http://www.webservicex.net/mortgage.asmx?wsdl
+WebServiceX: Retrieve company information based on stock symbol.
+
+WebServiceX API: http://www.webservicex.net/stockquote.asmx
 
 #### Project Workbase
-
-* Create main.js in cloud folder --> main entries of Cloud services
-* Create mortgage.js in cloud folder --> Implementation of mortgage on Cloud.
-* Create mortgage.js in js folder on client --> Mortgage client-side service agent
-* Create bind.js in js folder on client --> Events Bindings definition
-* Add basic.css in css folder on client --> Some CSS definition
-* Add util.js in js folder on client --> Some utilities
+* Create stock.js in cloud folder
+* Create stock.js in js folder on client
 
 ### Step 2 --- Implementation
+---------------------------------------
+Open stock.js in cloud folder and put the following code inside:
 
-Open mortgage.js in cloud folder with you favorite text editor and put following code inside:
+            /**
+             * Mash multiple business apis returned data.
+             * Stock Symble lookup: Using YAHOO API. JSONP
+             * Stock Info lookup: Using WebServiceX API . SOAP
+             *
+             */
 
-      /**
-       * Use this Web service to figure out your monthly mortgage payment.
-       */
-      var mortgage = {
-        //SOAP API URL
-      	SOAPUrl : "http://www.webservicex.net/mortgage.asmx",
-      	/**
-      	 * Calc mortgaeg based on user input.
-      	 * Tutorial: How to wrap SOAP message and unwrap SOAP response.
-      	 */
-      	getMortgage : function(years, interest,loanAmount,tax,insurance) {
-      		/**
-      		 * Since SOAP calls are wrapped HTTP calls, in Javascript we have to wrap SOAP envelope manually or using a SOAP library in Javascript
-      		 */
-      		var xmlContent = '<?xml version="1.0" encoding="utf-8"?>' + 
-      		'<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">' + 
-      		' <soap:Body>' + 
-      		'   <GetMortgagePayment xmlns="http://www.webserviceX.NET/">' + 
-      		'   <Years>'+years+'</Years>' + 
-      		'   <Interest>'+interest+'</Interest>' + 
-      		'   <LoanAmount>'+loanAmount+'</LoanAmount>' + 
-      		'   <AnnualTax>'+tax+'</AnnualTax>' + 
-      		'   <AnnualInsurance>'+insurance+'</AnnualInsurance>' + 
-      		'   </GetMortgagePayment>' + 
-      		' </soap:Body>' + 
-      		'</soap:Envelope>'
-      		
-      		
-      		var url=this.SOAPUrl;
-      		//Webcall paramters.
-      		var opt={
-      			url : url,
-      			method : "POST",
-      			charset : 'UTF-8',
-      			contentType : 'text/xml',
-      			body:xmlContent,
-      			period : 3600
-      		 };
-      		 
-      		 //Feedhenry Web Call
-      		var res= $fh.web(opt);
-      		
-      		// getSOAPElement will return an xml object that exists in SOAP response
-      		var xmlData=getSOAPElement("GetMortgagePaymentResult",res.body);
-      		
-      		// construct final returned JSON object.
-      		var rtnObj={
-      			MonthlyPrincipalAndInterest:xmlData.MonthlyPrincipalAndInterest.toString(),
-      			MonthlyTax:xmlData.MonthlyTax.toString(),
-      			MonthlyInsurance:xmlData.MonthlyInsurance.toString(),
-      			TotalPayment:xmlData.TotalPayment.toString()
-      		}
-      		
-      		
-      		return rtnObj;
-      		
-      		
-      	}
-      };
+            var stock = {
+                  //YAHOO finance api for looking up stock symbol with a company name. It is a JSONP service.
+                  yahooApi : "http://d.yimg.com/autoc.finance.yahoo.com/autoc?query={0}&callback=YAHOO.Finance.SymbolSuggest.ssCallback",
+                  //WebServiceX API (Open API). It returns stock details with specific stock symbol.
+                  webServiceXApi : "http://www.webservicex.net/stockquote.asmx",
+                  /**
+                   * The function will look for stock symbol based on "name" param, and return stock info from WebServiceX
+                   *
+                   * Return stock information.
+                   */
+                  getStockInfo : function(name) {
+                        //Compose request url using user input.
+                        var yahooApiUrl = this.yahooApi.replace("{0}", name);
+                        /*
+                         * Perform Webcall
+                         * Raw response from YAHOO JSONP api which contains stock symbol as well as other information we do not want.
+                         * 
+                         */ 
+                        var symbolRes = $fh.web({
+                              url : yahooApiUrl,
+                              method:"GET",
+                              charset:"UTF-8",
+                              period:3600
+                        });
 
-Please read the comments carefully to understand each step.
+                        //Clear up YAHOO response and only keep the information "stock symbol" we need.
+                        var stockSymbol = this.processSymbolRes(symbolRes);
 
-Write client-side code and link those files. Check out v2 branch to explore to final version.
+                        // construct SOAP envelop. We could do this manually or just use a Javascript Library.
+                        var soapEnvolope='<?xml version="1.0" encoding="utf-8"?>'
+                                                      +'<soap:Envelope xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:soap="http://schemas.xmlsoap.org/soap/envelope/">'
+                                                      +  '<soap:Body>'
+                                                      +    '<GetQuote xmlns="http://www.webserviceX.NET/">'
+                                                      +      '<symbol>'+stockSymbol+'</symbol>'
+                                                      +    '</GetQuote>'
+                                                      +  '</soap:Body>'
+                                                      +'</soap:Envelope>';
 
+                        //Retrieve SOAP url
+                        var stockInfoUrl=this.webServiceXApi;
 
-## REST Service Integration (v3 Branch)
+                        //Prepare webcall parameters
+                        var opt={
+                              url:stockInfoUrl,
+                              method:"POST",
+                              charset:"UTF-8",
+                              contentType:"text/xml",
+                              body:soapEnvolope,
+                              period:3600
+                        }
+
+                        //Perform webcall
+                        var stockInfoSoapRes=$fh.web(opt);
+
+                        //getSOAPElement will retrieve specific XML object within SOAP response
+                        var xmlData=getSOAPElement("GetQuoteResult",stockInfoSoapRes.body)
 
 
+                        //mash up the data and return to client.
+                        return { 
+                              stockSymbol:stockSymbol,
+                              stockInfo:xmlData.toString()
+                        };
+
+                  },
+                  /**
+                   * Process Response from YAHOO stock symbol api.
+                   * It will clear up the response and only return stock symbol as string.
+                   */
+                  processSymbolRes : function(res) {
+                        var resBody=res.body;
+                        var removedHeadRes=resBody.replace("YAHOO.Finance.SymbolSuggest.ssCallback(",""); //remove jsonp callback header
+                        var removedTailRes=removedHeadRes.substr(0,removedHeadRes.length-1); //remove jsonp callback bracket
+                        var resObj=$fh.parse(removedTailRes); //parse result to JSON object
+                        return resObj.ResultSet.Result[0].symbol; //return the first matched stock symbol
+                  }
+            }
