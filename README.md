@@ -14,3 +14,5 @@ This tutorial will lead an app development process which contains following cont
 ## Workbase Structure (v1 Branch)
 <img src="https://github.com/keyang-feedhenry/Business/raw/master/docs/projectstructure.png"/>
 
+Check out v1 branch to explore the code.
+
